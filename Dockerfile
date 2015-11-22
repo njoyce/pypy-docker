@@ -1,6 +1,6 @@
 FROM gliderlabs/alpine:3.2
 
-ENV PYPY_VERSION 4.0.0
+ENV PYPY_VERSION 4.0.1
 
 # add dev packages
 RUN apk-install build-base bzip2-dev ca-certificates expat-dev gdbm-dev libc-dev libffi-dev linux-headers ncurses-dev openssl-dev python sqlite-dev tar wget zlib-dev \
