@@ -13,7 +13,7 @@ run: build
 debug: build
 	docker run -it --rm \
                 $(DOCKER_IMAGE):$(DOCKER_TAG) \
-                /bin/bash
+                /bin/sh
 
 push: build
 ifeq ($(DOCKER_TAG),dev)
