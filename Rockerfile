@@ -1,0 +1,96 @@
+# NOTE: Don't execute this file directly - see Makefile
+
+# build PyPy and put the files destined for /usr in to /data
+# Another container then can be used to inject these files and install some base
+# dependencies
+FROM {{ .BaseImage }}
+
+ENV PYPY_VERSION {{ .PyPyVersion }}
+
+# add dev packages
+RUN apk --update add \
+    build-base \
+    bzip2-dev \
+    ca-certificates \
+    expat-dev \
+    gdbm-dev \
+    libc-dev \
+    libffi-dev \
+    linux-headers \
+    ncurses-dev \
+    openssl-dev \
+    pax-utils \
+    readline-dev \
+    python \
+    sqlite-dev \
+    tar \
+    tk \
+    tk-dev \
+    curl \
+    zlib-dev
+
+RUN mkdir -p /tmp/build
+WORKDIR /tmp/build
+
+# download the PyPy source ball and apply patches to build correctly on alpine
+RUN PYPY_FILE=pypy2-v${PYPY_VERSION}-src.tar.bz2 \
+  && curl -SLO "https://bitbucket.org/pypy/pypy/downloads/$PYPY_FILE" \
+  && tar -xjf "$PYPY_FILE" -C . --strip-components=1 \
+  # apply patch to be able to build tk support
+  && curl -SLO https://gist.githubusercontent.com/njoyce/42f1ed088d51c0c5965a5e8f5e9a78c4/raw/ed3a81413c84b614cc8c642bbaf9747c0857521b/alpine-pypy-tk-build.diff \
+  && patch -p0 < alpine-pypy-tk-build.diff \
+  # apply patch to undo alpine python ctypes/util.py change
+  && curl -SLO https://gist.githubusercontent.com/njoyce/1fb2bd4fe1ea7889b1889be6967f2ba6/raw/7c297fe60cf952023a6aa9e67513f5d3e0a94e65/alpine-pypy-python-ctypes.diff \
+  && patch -p0 < alpine-pypy-python-ctypes.diff 
+
+# Build PyPy - this will take an epically long time (>2h)
+RUN python rpython/bin/rpython --opt=jit pypy/goal/targetpypystandalone.py 
+
+# Create the release package
+RUN python pypy/tool/release/package.py \
+    --override_pypy_c ./pypy-c \
+    --archive-name pypy-${PYPY_VERSION}-linux64
+
+WORKDIR /tmp/usession-release-pypy2.7-v${PYPY_VERSION}-1/build/pypy-${PYPY_VERSION}-linux64
+
+# prune the package to minimise the install size
+RUN find . | grep \/test\/ | xargs rm -rf
+RUN find . | grep \/tests\/ | xargs rm -rf
+
+RUN mkdir /dest && cp -Pr * /dest
+
+EXPORT /dest
+
+# inject pypy in to the final container
+FROM {{ .BaseImage }}
+
+RUN apk-install --virtual .pypy-deps \
+  expat \
+  gdbm \
+  libc6-compat \
+  libbz2 \
+  libcrypto1.0 \
+  libffi \
+  libssl1.0 \
+  ncurses-libs \
+  sqlite-libs \
+  zlib \
+  tk
+
+IMPORT /dest/ /usr
+
+RUN ln -s /usr/bin/pypy /usr/bin/python
+
+RUN apk --update add --virtual .pip-deps \
+    curl \
+    tar \
+    ca-certificates \
+  && curl -SL 'https://bootstrap.pypa.io/get-pip.py' | /usr/bin/pypy \
+  && pip install --upgrade pip setuptools \
+  && rm -rf /root/.pip \
+  && apk del .pip-deps \
+  && rm -rf /var/cache/apk/*
+
+CMD ["/usr/bin/pypy"]
+
+TAG {{ .DockerImage }}:{{ .DockerTag }}
