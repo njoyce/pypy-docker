@@ -21,7 +21,8 @@ RUN apk --update add \
     openssl-dev \
     pax-utils \
     readline-dev \
-    python \
+    python-dev \
+    py-pip \
     sqlite-dev \
     tar \
     tk \
@@ -38,11 +39,9 @@ RUN PYPY_FILE=pypy2-v${PYPY_VERSION}-src.tar.bz2 \
   && tar -xjf "$PYPY_FILE" -C . --strip-components=1 \
   # apply patch to be able to build tk support
   && curl -SLO https://gist.githubusercontent.com/njoyce/42f1ed088d51c0c5965a5e8f5e9a78c4/raw/ed3a81413c84b614cc8c642bbaf9747c0857521b/alpine-pypy-tk-build.diff \
-  && patch -p0 < alpine-pypy-tk-build.diff \
-  # apply patch to undo alpine python ctypes/util.py change
-  && curl -SLO https://gist.githubusercontent.com/njoyce/1fb2bd4fe1ea7889b1889be6967f2ba6/raw/7c297fe60cf952023a6aa9e67513f5d3e0a94e65/alpine-pypy-python-ctypes.diff \
-  && patch -p0 < alpine-pypy-python-ctypes.diff 
+  && patch -p0 < alpine-pypy-tk-build.diff
 
+RUN pip install cffi
 # Build PyPy - this will take an epically long time (>2h)
 RUN python rpython/bin/rpython --opt=jit pypy/goal/targetpypystandalone.py 
 
@@ -64,7 +63,7 @@ EXPORT /dest
 # inject pypy in to the final container
 FROM {{ .BaseImage }}
 
-RUN apk-install --virtual .pypy-deps \
+RUN apk add --no-cache --virtual .pypy-deps \
   expat \
   gdbm \
   libc6-compat \
@@ -81,15 +80,14 @@ IMPORT /dest/ /usr
 
 RUN ln -s /usr/bin/pypy /usr/bin/python
 
-RUN apk --update add --virtual .pip-deps \
+RUN apk --update --no-cache add --virtual .pip-deps \
     curl \
     tar \
     ca-certificates \
   && curl -SL 'https://bootstrap.pypa.io/get-pip.py' | /usr/bin/pypy \
   && pip install --upgrade pip setuptools \
   && rm -rf /root/.pip \
-  && apk del .pip-deps \
-  && rm -rf /var/cache/apk/*
+  && apk del .pip-deps
 
 CMD ["/usr/bin/pypy"]
 
