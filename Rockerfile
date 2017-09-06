@@ -70,6 +70,7 @@ RUN apk add --no-cache --virtual .pypy-deps \
   libbz2 \
   libcrypto1.0 \
   libffi \
+  libgcc \
   libssl1.0 \
   ncurses-libs \
   sqlite-libs \

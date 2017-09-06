@@ -1,8 +1,8 @@
-PYPY_VERSION=5.7.1
+PYPY_VERSION=5.8.0
 
 ALPINE_VERSION=3.6
-BASE_IMAGE=quay.io/gigafm/base:alpine-$(ALPINE_VERSION)
-DOCKER_IMAGE=quay.io/gigafm/pypy
+BASE_IMAGE=quay.io/njoyce/base:alpine-$(ALPINE_VERSION)
+DOCKER_IMAGE=quay.io/njoyce/pypy
 DOCKER_TAG=py2-$(PYPY_VERSION)
 
 build:
