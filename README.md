@@ -6,11 +6,11 @@ Pulling
 -------
 
 ```sh
-docker pull njoyce/pypy:2-5.9
+docker pull njoyce/pypy:2-5.9.0
 ```
 
-Images is ``122.4 MB`` uncompressed. It is a _fat_ build - meaning all the
-extensions such as ``tk``, ``openssl``, ``ncurses``.
+Images is ``124 MB`` uncompressed. It is a _fat_ build - meaning all the
+extensions such as ``tk``, ``openssl``, ``ncurses`` are included.
 
 Latest version (at time of building) of ``pip`` and ``setuptools``.
 
