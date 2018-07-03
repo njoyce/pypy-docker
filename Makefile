@@ -9,7 +9,7 @@ else
 endif
 
 clean:
-	rm Dockerfile || true
+	rm -f Dockerfile
 
 Dockerfile: Dockerfile.template
 	sed \
