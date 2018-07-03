@@ -1,5 +1,5 @@
-PYPY_VERSION=5.10.0
-ALPINE_VERSION=3.6
+PYPY_VERSION=6.0.0
+ALPINE_VERSION=3.7
 BASE_REPO=njoyce/pypy
 
 ifeq ($(strip $(shell git status --porcelain 2>/dev/null)),)
